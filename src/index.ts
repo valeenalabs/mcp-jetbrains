@@ -57,6 +57,16 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
 });
 
 
+interface IDEResponseOk {
+    status: string;
+    error: null;
+}
+interface IDEResponseErr {
+    status: null;
+    error: string;
+}
+type IDEResponse = IDEResponseOk | IDEResponseErr;
+
 async function handleToolCall(name: string, args: any): Promise<CallToolResult> {
     try {
         const response = await fetch(`${IDE_ENDPOINT}/mcp/${name}`, {
@@ -71,13 +81,12 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
             throw new Error(`Response failed: ${response.status}`);
         }
 
-        const text = await response.text();
+        const { status, error }: IDEResponse = await response.json();
+        const isError = !!error;
+        const text = status ?? error;
         return {
-            content: [{
-                type: "text",
-                text: text,
-            }],
-            isError: false,
+            content: [{ type: "text", text }],
+            isError,
         };
     } catch (error: any) {
         return {
