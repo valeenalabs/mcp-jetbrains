@@ -57,30 +57,21 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
 });
 
 
-async function postWithConfig(
-    endpoint: string,
-    data: any,
-    errorMessage: string,
-): Promise<string> {
-    const response = await fetch(`${IDE_ENDPOINT}${endpoint}`, {
-        method: 'POST',
-        headers: {
-            "User-Agent": "jetbrains-mcp-server",
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data)
-    });
-
-    if (!response.ok) {
-        throw new Error(errorMessage + " code " + response.status + " " + response.statusText);
-    }
-
-    return response.text();
-}
-
 async function handleToolCall(name: string, args: any): Promise<CallToolResult> {
     try {
-        const text = await postWithConfig(`/mcp/${name}`, args, "???");
+        const response = await fetch(`${IDE_ENDPOINT}/mcp/${name}`, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(args)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Response failed: ${response.status}`);
+        }
+
+        const text = await response.text();
         return {
             content: [{
                 type: "text",
