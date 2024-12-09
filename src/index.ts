@@ -6,11 +6,57 @@ import {
     CallToolResult,
     ListResourcesRequestSchema,
     ListToolsRequestSchema,
-    ReadResourceRequestSchema, Tool,
+    ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 
-const PORT = process.env.IDE_PORT || "63343";
-const IDE_ENDPOINT = `http://localhost:${PORT}/api`;
+interface IDEResponseOk {
+    status: string;
+    error: null;
+}
+interface IDEResponseErr {
+    status: null;
+    error: string;
+}
+type IDEResponse = IDEResponseOk | IDEResponseErr;
+
+/**
+ * Try to find a working IDE endpoint.
+ * Logic:
+ * 1. If process.env.IDE_PORT is set, use that port directly.
+ * 2. If not set, try ports from 63342 to 63352.
+ * 3. For each port, send a test request to /mcp/list_tools. If it works (res.ok), use that port.
+ * 4. If no port works, throw an error.
+ */
+async function findWorkingIDEEndpoint(): Promise<string> {
+    // If user specified a port, just use that
+    if (process.env.IDE_PORT) {
+        const testEndpoint = `http://localhost:${process.env.IDE_PORT}/api`;
+        if (await testListTools(testEndpoint)) {
+            return testEndpoint;
+        } else {
+            throw new Error(`Specified IDE_PORT=${process.env.IDE_PORT} but it is not responding correctly.`);
+        }
+    }
+
+    for (let port = 63342; port <= 63352; port++) {
+        const candidateEndpoint = `http://localhost:${port}/api`;
+        if (await testListTools(candidateEndpoint)) {
+            return candidateEndpoint;
+        }
+    }
+
+    throw new Error("No working IDE endpoint found in range 63342-63352");
+}
+
+async function testListTools(endpoint: string): Promise<boolean> {
+    try {
+        const res = await fetch(`${endpoint}/mcp/list_tools`);
+        return res.ok;
+    } catch {
+        return false;
+    }
+}
+
 
 const server = new Server(
     {
@@ -25,10 +71,13 @@ const server = new Server(
     },
 );
 
-server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: await fetch(`${IDE_ENDPOINT}/mcp/list_tools`)
-        .then(res => res.ok ? res.json() : Promise.reject(new Error("Unable to list tools")))
-}));
+server.setRequestHandler(ListToolsRequestSchema, async () => {
+    const endpoint = await findWorkingIDEEndpoint();
+    return {
+        tools: await fetch(`${endpoint}/mcp/list_tools`)
+            .then(res => res.ok ? res.json() : Promise.reject(new Error("Unable to list tools")))
+    }
+});
 
 server.setRequestHandler(ListResourcesRequestSchema, async () => {
     return {
@@ -56,20 +105,10 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     throw new Error("Resource not found");
 });
 
-
-interface IDEResponseOk {
-    status: string;
-    error: null;
-}
-interface IDEResponseErr {
-    status: null;
-    error: string;
-}
-type IDEResponse = IDEResponseOk | IDEResponseErr;
-
 async function handleToolCall(name: string, args: any): Promise<CallToolResult> {
     try {
-        const response = await fetch(`${IDE_ENDPOINT}/mcp/${name}`, {
+        const endPoint = await findWorkingIDEEndpoint();
+        const response = await fetch(`${endPoint}/mcp/${name}`, {
             method: 'POST',
             headers: {
                 "Content-Type": "application/json",
@@ -85,7 +124,7 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
         const isError = !!error;
         const text = status ?? error;
         return {
-            content: [{ type: "text", text }],
+            content: [{ type: "text", text: text }],
             isError,
         };
     } catch (error: any) {
@@ -104,6 +143,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) =>
 );
 
 async function runServer() {
+    await findWorkingIDEEndpoint();
     const transport = new StdioServerTransport();
     await server.connect(transport);
     console.error("JetBrains Proxy MCP Server running on stdio");
