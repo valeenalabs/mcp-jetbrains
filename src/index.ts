@@ -85,7 +85,7 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
         const isError = !!error;
         const text = status ?? error;
         return {
-            content: [{ type: "text", text }],
+            content: [{ type: "text", text: text }],
             isError,
         };
     } catch (error: any) {
