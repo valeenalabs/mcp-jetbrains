@@ -58,11 +58,11 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
 
 
 interface IDEResponseOk {
-    text: string;
+    status: string;
     error: null;
 }
 interface IDEResponseErr {
-    text: null;
+    status: null;
     error: string;
 }
 type IDEResponse = IDEResponseOk | IDEResponseErr;
@@ -81,11 +81,11 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
             throw new Error(`Response failed: ${response.status}`);
         }
 
-        const { text, error }: IDEResponse = await response.json();
+        const { status, error }: IDEResponse = await response.json();
         const isError = !!error;
-        const textNN = text ?? error;
+        const text = status ?? error;
         return {
-            content: [{ type: "text", text: textNN }],
+            content: [{ type: "text", text: text }],
             isError,
         };
     } catch (error: any) {
