@@ -25,13 +25,10 @@ const server = new Server(
     },
 );
 
-server.setRequestHandler(ListToolsRequestSchema, async () => (
-    fetchWithConfig("/mcp/list_tools", "Unable to list tools").then((tools) => {
-        return {
-            tools: tools ? JSON.parse(tools) as Tool[] : [],
-        };
-    }
-)));
+server.setRequestHandler(ListToolsRequestSchema, async () => ({
+    tools: await fetch(`${IDE_ENDPOINT}/mcp/list_tools`)
+        .then(res => res.ok ? res.json() : Promise.reject(new Error("Unable to list tools")))
+}));
 
 server.setRequestHandler(ListResourcesRequestSchema, async () => {
     return {
@@ -59,19 +56,6 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     throw new Error("Resource not found");
 });
 
-async function fetchWithConfig(endpoint: string, errorMessage: string): Promise<string> {
-    const response = await fetch(`${IDE_ENDPOINT}${endpoint}`, {
-        headers: {
-            "User-Agent": "jetbrains-mcp-server"
-        }
-    });
-
-    if (!response.ok) {
-        throw new Error(errorMessage);
-    }
-
-    return response.text();
-}
 
 async function postWithConfig(
     endpoint: string,
