@@ -25,15 +25,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-
-      - name: Test NPM Token
-        run: |
-          echo "Testing NPM token..."
-          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
-          npm whoami
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
       - name: Publish to NPM
         run: pnpm publish --no-git-checks --access public --provenance
         env:
