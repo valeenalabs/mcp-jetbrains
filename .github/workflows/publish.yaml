@@ -26,13 +26,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Publish to NPM
-        run: pnpm publish --no-git-checks --access public --provenance
+        run: |
+          export NODE_AUTH_TOKEN=$(echo "${{ secrets.NPM_TOKEN }}" | tr -d '\n')
+          pnpm publish --no-git-checks --access public --provenance
         continue-on-error: true
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Upload npm logs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: npm-debug-logs
           path: /home/runner/.npm/_logs/*.log
