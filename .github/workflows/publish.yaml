@@ -32,7 +32,6 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Upload npm logs
-        if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: npm-debug-logs
