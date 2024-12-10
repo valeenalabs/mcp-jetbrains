@@ -1,9 +1,13 @@
 {
   "name": "@jetbrains/mcp-proxy",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "A MCP proxy to redirect requests to JetBrains IDEs",
   "main": "dist/src/index.js",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JetBrains/mcp-jetbrains.git"
+  },
   "bin": {
     "mcp-jetbrains-proxy": "dist/src/index.js"
   },
