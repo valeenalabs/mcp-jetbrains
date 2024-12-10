@@ -5,7 +5,8 @@ The server proxies requests from client to JetBrains IDE.
 
 ## Usage with Claude Desktop
 
-To use this with Claude Desktop, add the following to your `claude_desktop_config.json`:
+To use this with Claude Desktop, add the following to your `claude_desktop_config.json`.
+The full path on MacOS: `~/Library/Application\ Support/Claude/claude_desktop_config.json`, on Windows: `%APPDATA%/Claude/claude_desktop_config.json`.
 
 ```json
 {
