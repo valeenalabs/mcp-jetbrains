@@ -3,6 +3,10 @@
 
 The server proxies requests from client to JetBrains IDE.
 
+## Install MCP Server plugin
+
+https://plugins.jetbrains.com/plugin/26071-mcp-server
+
 ## Usage with Claude Desktop
 
 To use this with Claude Desktop, add the following to your `claude_desktop_config.json`.
