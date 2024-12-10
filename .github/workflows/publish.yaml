@@ -33,10 +33,7 @@ jobs:
 
       - name: Upload npm logs
         if: failure()
-        run: |
-          mkdir -p logs
-          cp /home/runner/.npm/_logs/*.log logs/
         uses: actions/upload-artifact@v3
         with:
           name: npm-debug-logs
-          path: logs
+          path: /home/runner/.npm/_logs/*.log
