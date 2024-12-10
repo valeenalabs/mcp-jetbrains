@@ -27,5 +27,16 @@ jobs:
 
       - name: Publish to NPM
         run: pnpm publish --no-git-checks --access public --provenance
+        continue-on-error: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Upload npm logs
+        if: failure()
+        run: |
+          mkdir -p logs
+          cp /home/runner/.npm/_logs/*.log logs/
+        uses: actions/upload-artifact@v3
+        with:
+          name: npm-debug-logs
+          path: logs
