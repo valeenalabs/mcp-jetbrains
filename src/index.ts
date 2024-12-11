@@ -44,14 +44,25 @@ async function findWorkingIDEEndpoint(): Promise<string> {
             return candidateEndpoint;
         }
     }
-
+    server.notification({method: "notifications/tools/list_changed"})
     throw new Error("No working IDE endpoint found in range 63342-63352");
 }
 
+let previousResponse: string | null = null;
 async function testListTools(endpoint: string): Promise<boolean> {
     try {
         const res = await fetch(`${endpoint}/mcp/list_tools`);
-        return res.ok;
+
+        if (!res.ok) {
+            return false;
+        }
+
+        const currentResponse = await res.text();
+        if (previousResponse !== null && previousResponse !== currentResponse) {
+            server.notification({ method: "notifications/tools/list_changed" });
+        }
+        previousResponse = currentResponse;
+        return true;
     } catch {
         return false;
     }
