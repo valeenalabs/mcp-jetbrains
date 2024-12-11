@@ -90,32 +90,6 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     }
 });
 
-server.setRequestHandler(ListResourcesRequestSchema, async () => {
-    return {
-        resources: [
-            {
-                uri: "jetbrains://current_file",
-                mimeType: "text/plain",
-                name: "Current File inside JetBrains IDE",
-            },
-        ],
-    };
-});
-
-server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-    const uri = request.params.uri.toString();
-    if (uri === "jetbrains://current_file") {
-        return {
-            contents: [{
-                uri,
-                mimeType: "text/plain",
-                text: "Hello world!",
-            }],
-        };
-    }
-    throw new Error("Resource not found");
-});
-
 async function handleToolCall(name: string, args: any): Promise<CallToolResult> {
     try {
         const endPoint = await findWorkingIDEEndpoint();
