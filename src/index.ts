@@ -4,19 +4,19 @@ import {StdioServerTransport} from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
     CallToolRequestSchema,
     CallToolResult,
-    ListResourcesRequestSchema,
     ListToolsRequestSchema,
-    ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 
 interface IDEResponseOk {
     status: string;
     error: null;
 }
+
 interface IDEResponseErr {
     status: null;
     error: string;
 }
+
 type IDEResponse = IDEResponseOk | IDEResponseErr;
 
 /**
@@ -44,11 +44,20 @@ async function findWorkingIDEEndpoint(): Promise<string> {
             return candidateEndpoint;
         }
     }
-    server.notification({method: "notifications/tools/list_changed"})
+    sendToolsChanged()
+    previousResponse = ""
     throw new Error("No working IDE endpoint found in range 63342-63352");
 }
 
 let previousResponse: string | null = null;
+
+function sendToolsChanged() {
+    try {
+        server.notification({method: "notifications/tools/list_changed"})
+    } catch (_) {
+    }
+}
+
 async function testListTools(endpoint: string): Promise<boolean> {
     try {
         const res = await fetch(`${endpoint}/mcp/list_tools`);
@@ -59,7 +68,7 @@ async function testListTools(endpoint: string): Promise<boolean> {
 
         const currentResponse = await res.text();
         if (previousResponse !== null && previousResponse !== currentResponse) {
-            server.notification({ method: "notifications/tools/list_changed" });
+            sendToolsChanged()
         }
         previousResponse = currentResponse;
         return true;
@@ -76,7 +85,9 @@ const server = new Server(
     },
     {
         capabilities: {
-            tools: {},
+            tools: {
+                listChanged: true,
+            },
             resources: {},
         },
     },
@@ -105,11 +116,11 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
             throw new Error(`Response failed: ${response.status}`);
         }
 
-        const { status, error }: IDEResponse = await response.json();
+        const {status, error}: IDEResponse = await response.json();
         const isError = !!error;
         const text = status ?? error;
         return {
-            content: [{ type: "text", text: text }],
+            content: [{type: "text", text: text}],
             isError,
         };
     } catch (error: any) {
@@ -128,9 +139,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) =>
 );
 
 async function runServer() {
-    await findWorkingIDEEndpoint();
     const transport = new StdioServerTransport();
     await server.connect(transport);
+    const checkEndpoint = () => findWorkingIDEEndpoint().catch();
+    // We need to recheck the IDE endpoint every 10 seconds since IDE might be closed or restarted
+    setInterval(checkEndpoint, 10000);
+    await checkEndpoint();
     console.error("JetBrains Proxy MCP Server running on stdio");
 }
 
