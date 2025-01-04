@@ -92,7 +92,7 @@ async function findWorkingIDEEndpoint(): Promise<string> {
     // 1. If user specified a port, just use that
     if (process.env.IDE_PORT) {
         log(`IDE_PORT is set to ${process.env.IDE_PORT}. Testing this port.`);
-        const testEndpoint = `http://localhost:${process.env.IDE_PORT}/api`;
+        const testEndpoint = `http://127.0.0.1:${process.env.IDE_PORT}/api`;
         if (await testListTools(testEndpoint)) {
             log(`IDE_PORT ${process.env.IDE_PORT} is working.`);
             return testEndpoint;
@@ -104,7 +104,7 @@ async function findWorkingIDEEndpoint(): Promise<string> {
 
     // 2. Otherwise, scan a range of ports
     for (let port = 63342; port <= 63352; port++) {
-        const candidateEndpoint = `http://localhost:${port}/api`;
+        const candidateEndpoint = `http://127.0.0.1:${port}/api`;
         log(`Testing port ${port}...`);
         const isWorking = await testListTools(candidateEndpoint);
         if (isWorking) {
